@@ -1,7 +1,0 @@
-#Demo 4 - Using History and Transcript
-help Start-Transcript
-Start-Transcript -path .\transcripts\Transcript1.txt -append
-Get-service | Where-Object -Property Status -eq Stopped
-Stop-transcript
-Notepad .\Transcripts\transcript1.txt
-
