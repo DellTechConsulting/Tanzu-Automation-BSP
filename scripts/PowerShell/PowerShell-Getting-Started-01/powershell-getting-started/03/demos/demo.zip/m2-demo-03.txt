@@ -1,0 +1,16 @@
+#Demo 3 - Get Commands
+Help get-command 
+Help Get-Command -examples
+get-command
+get-command -verb New
+get-command -CommandType Function 
+#You are looking for a command to work with IP Address Configurations on a Windows System
+get-command -name *IP* | More
+get-command -Name *IP* -Module Net*
+Get-command -Name *IP* -Module NetTCPIP
+Help Get-NetIPAddress 
+Help Get-NetIPAddress -Examples
+Get-NetIPAddress
+GIP
+
+

@@ -1,0 +1,14 @@
+#Last, I want to see the last time the system had a reboot. The easiest way to see this is by finding the 1074 System event in Event Viewer. This event message signifies that the system has restarted. 
+get-command get-*Event*
+help get-eventlog -Examples
+get-eventlog -LogName System | gm
+::
+Get-EventLog -log system –newest 1000 |
+where-object {$_.eventid –eq '1074'} |
+format-table machinename, username, timegenerated –autosize
+::
+:: 
+Get-EventLog -log system –newest 1000 |
+where-object eventid –eq '1074' |
+format-table machinename, username, timegenerated –autosize
+::

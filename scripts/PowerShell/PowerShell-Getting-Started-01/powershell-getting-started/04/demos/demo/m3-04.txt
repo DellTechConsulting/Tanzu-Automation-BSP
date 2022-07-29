@@ -1,0 +1,4 @@
+help Get-ComputerInfo
+help Get-ComputerInfo -Examples
+Get-ComputerInfo | more
+Get-ComputerInfo -Property *memory*

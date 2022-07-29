@@ -1,0 +1,24 @@
+#Demo-M2-01
+get-verb | more
+
+get-verb -Verb Set | more
+
+get-verb -Verb Set | format-list
+
+Get-Verb -Group Security | Format-List
+
+start https://aka.ms/psverbs
+
+get-service -Name M* -ComputerName Client01,DC01
+
+Get-Alias | More
+
+get-alias -Definition *service*
+
+gsv -Name M* -ComputerName Client1,DC01
+
+help gsv
+
+gsv M* -Computername Client01,DC01
+
+gsv M* -Comp Client1,Dc01

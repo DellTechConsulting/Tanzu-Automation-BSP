@@ -1,0 +1,6 @@
+Get-WmiObject -List *
+Get-CimClass -ClassName *
+Get-CimClass -ClassName *memory*
+Get-WmiObject -class Win32_PhysicalMemory
+Get-CimInstance -ClassName Win32_PhysicalMemory
+Get-CimInstance -ClassName Win32_PhysicalMemory | Select Tag,Capacity

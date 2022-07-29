@@ -1,0 +1,39 @@
+***********************************************************************
+               Windows PowerShell Remoting Fundamentals.
+***********************************************************************
+
+
+
+=> 
+
+=> Lab setup:
+	** PowerShell 5.x
+	** Domain Controller
+	** Admin Desktop [Win-10] with RSAT
+	** Member Server 2K12 R2
+	
+=> WSMan
+	** Managed by WinRM service.
+	** Connect remotely via a single port: 5985 |||| If required SSL, the the PORT: 5986
+	** Uses Kerberos Authentication.
+	** Encrypted Communication.
+	** PSSession = To establish connection between 2 remote m/c's.
+	
+=> Legacy Remoting VS PowerShell remoting:
+    ** ..............
+	** help about_remote -ShowWindow [Displays all Remote cmdlets on a separate GUI window.]
+	
+=> Resources:
+	** https://bit.ly/SecretsPSRemoting
+	
+=> 
+
+1. serverdc01 [My DC]; UN: Administrator; PW: P@ssw0rd
+	** company.pri domain
+	$IPv4Address = "192.168.29.233"
+	$IPv4Prefix = "24"
+	$IPv4GW = "192.168.29.1"
+	$IPv4DNS = "8.8.8.8"
+	
+2. workstation01 [My Workstation with RSAT.]
+3. server01 [Member Server]

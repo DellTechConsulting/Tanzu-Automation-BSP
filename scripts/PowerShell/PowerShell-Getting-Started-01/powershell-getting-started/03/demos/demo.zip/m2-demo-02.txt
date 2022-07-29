@@ -1,0 +1,16 @@
+#Demo 2 - Working with Help
+#Runa as Standard
+get-help                           
+help                  
+help *Service* | more                        
+help get-service            
+help get-service 
+#Elevate to Admin
+start-process PowerShell -RunAs -Credential (Get-Credential)
+upadate-help
+help get-service
+Man get-service
+help get-service -Examples
+help get-service -full
+help get-service -online  
+Help *about*
