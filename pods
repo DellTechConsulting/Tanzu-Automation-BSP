@@ -1,0 +1,20 @@
+Kubernetes PODs:-
+Assumption:
+-> Lets assume that "Application is already developed and built into DOCKER images and it is available on a DOCKER repository like DOCKER Hub so K8s can PULL it down" & we also assume "The K8s cluster has already been setup and is working (Single node or multinode doesn't matter) and all the services need to be in RUNNING state".
+POD:
+	- As discussed before with K8s our ultimate aim is to deploy our application in the form of containers on set of machines that are configued as WORKER nodes in a cluster.
+	- However K8s does not deploy containers directly on the WORKER nodes. The containers are encapsulated into a K8s object known as PODs.
+	- A POD is a single instance of an application.
+	- A POD is the smallest object that you can create in K8s.
+	- Simplest of the simplest case:
+	  >> Single node K8s cluster.
+	  >> With a Single instance of your application running.
+	  >> In a single DOCKER container, encapsulated in a POD.
+	- What if the number of users accessing our application increases? And we need to scale our application.
+	  >> We need to add additional instances of our Web Application to share the load.
+	  >> Now where we should spin up additional instances? Do we bring-up new container instances within the same POD? = NO.
+	  >> NO, we create new POD altogether with a new instance of the same application.
+	  >> We will then have two instances of Web application running on two separate PODs on the same K8s system or Node.
+	- What if the number of users further increases and your current NODE has no sufficient capacity?
+	  >> Then we can always deploy additional PODs on the new node in the cluster.
+	  >> We will then have new NODE added to the cluster to expand the clusters physical capacity.
