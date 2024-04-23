@@ -1,0 +1,88 @@
+- name: Configure VRFContext SE MGMT DFGW
+  avi_vrfcontext:
+    avi_credentials: "{{ avi_credentials }}"
+    state: present
+    cloud_ref: "{{'/api/cloud?name='+ cloud_name }}"
+    name: "avi-mon-{{ namespace_name }}-T1"
+    static_routes:
+    - route_id: "1"
+      prefix:
+        mask: 0
+        ip_addr: 
+          type: "V4"
+          addr: "0.0.0.0"
+      next_hop:
+        type: "V4"
+        addr: "{{ avi_network.network[0] | ansible.utils.ipaddr('next_usable') }}"
+  register: avi_vrfcontext
+
+- name: Display created VRFContext object
+  debug:
+    msg: "{{ avi_vrfcontext }}"
+
+- name: Configure Networks 
+  avi_network:
+    name: "avi-mon-{{ namespace_name }}-L7-VIP"
+    avi_credentials: "{{ avi_credentials }}"
+    state: present
+    cloud_ref: "{{'/api/cloud?name='+ cloud_name }}"
+    dhcp_enabled: false
+    vrf_context_ref: "/api/vrfcontext?name=avi-mon-{{ namespace_name }}-T1"
+    configured_subnets:
+      - prefix:
+          mask: '{{ subnet_prefix_length }}'
+          ip_addr:
+            type: V4
+            addr: "{{ avi_network.network[0].split('/')[0] }}"
+        static_ip_ranges:
+          - range:
+              begin:
+                type: V4
+                addr: "{{ avi_network.network[0] | ansible.utils.next_nth_usable(3) }}"
+              end:
+                type: V4
+                addr: "{{ avi_network.network[0] | ansible.utils.next_nth_usable(12) }}"
+            type: STATIC_IPS_FOR_VIP_AND_SE
+  register: avi_network_create_result
+
+- name: Display created Network object
+  debug:
+    msg: "{{ avi_network_create_result }}"
+
+- name: Login to avi
+  uri:
+    url: "https://{{ avi_credentials.controller }}/login"
+    method: post
+    validate_certs: "{{ validate_certs }}"
+    body_format: form-urlencoded
+    body:
+      username: "{{ avi_credentials.username }}"
+      password: "{{ avi_credentials.password}}"
+  register: login_response 
+
+- name: get ipam profile by name
+  ansible.builtin.include_tasks: get_ipam_dns_provider_profile_by_name.yml
+
+- name: set network facts
+  set_fact:
+    ipam_dns_profile_uuid: "{{ ipam_get_result.uuid }}"
+
+- name: Add network to IPAM Profile
+  uri:
+    url: "https://{{ avi_credentials.controller }}/api/ipamdnsproviderprofile/{{ ipam_dns_profile_uuid }}"
+    method: PATCH
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      X-CSRFToken: "{{ login_response.cookies.csrftoken }}"
+      Referer: "https://{{ avi_credentials.controller }}"
+      X-Avi-Version: "{{ avi_credentials.api_version }}"
+      Cookie: "{{ login_response.cookies_string }}"
+    body_format: json
+    body: "{{ lookup('template', 'templates/add_network_to_ip_profile_request.json.j2')}}"
+  register: ipam_result
+
+- name: Display created IPAM object
+  debug:
+    msg: "{{ ipam_result }}"
