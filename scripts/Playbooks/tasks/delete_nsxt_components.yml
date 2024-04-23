@@ -1,0 +1,88 @@
+- name: set tkg cluster name
+  set_fact:
+    tkg_cluster_name: "tkg-{{ namespace_name }}"
+- name: Delete SNAT resource using URI module
+  uri:
+    url: "https://{{ nsxt_manager_hostname }}/policy/api/v1/infra/tier-1s/avi-mon-{{ namespace_name }}-T1/nat/{{ nat_id }}/nat-rules/avi-mon-{{ tkg_cluster_name }}-SNAT"
+    method: DELETE
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+    user: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    force_basic_auth: true
+    validate_certs: false
+  register: tier1_nat_rule
+- debug:
+    msg: "{{ tier1_nat_rule }}"
+
+- name: Delete NSX-T Segment
+  vmware.ansible_for_nsxt.nsxt_policy_segment:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: false
+    state: absent     
+    id: "avi-mon-{{ namespace_name }}-L7-VIP"
+    tier1_id: "avi-mon-{{ namespace_name }}-T1"
+  register: tier1_segment
+
+- name: Delete Security Policy
+  vmware.ansible_for_nsxt.nsxt_policy_security_policy:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: False
+    domain_id: default
+    id: "avi-mon-{{ tkg_cluster_name }}"
+    state: "absent"
+  register: Policy_Rule
+- debug:
+    msg: "{{ Policy_Rule }}"
+
+- name: Delete Source Policy Group
+  vmware.ansible_for_nsxt.nsxt_policy_group:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: False
+    domain_id: default
+    expression:
+    - ip_addresses:
+        - "{{ egress_network | ansible.utils.next_nth_usable(2) }}"
+      resource_type: IPAddressExpression
+    id: "avi-mon-{{ tkg_cluster_name }}-SNAT"
+    state: "absent"
+  register: Source_Group
+- debug:
+    msg: "{{ Source_Group }}"
+
+- name: Delete Destination Policy Group
+  vmware.ansible_for_nsxt.nsxt_policy_group:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: False
+    domain_id: default
+    expression:
+    - ip_addresses:
+        - "{{ namespace_network }}"
+      resource_type: IPAddressExpression
+    id: "tanzu-namespace-{{ tkg_cluster_name }}"
+    state: "absent"
+  register: Destination_Group
+- debug:
+    msg: "{{ Destination_Group }}"
+
+- name: Delete NSX-T Tier-1 Gateway
+  vmware.ansible_for_nsxt.nsxt_policy_tier1:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: false
+    id: "avi-mon-{{ namespace_name }}-T1"
+    locale_services:
+      - state: absent
+        display_name: "avi-mon-{{ namespace_name }}-T1"
+    state: absent
+  register: tier1_gateway
