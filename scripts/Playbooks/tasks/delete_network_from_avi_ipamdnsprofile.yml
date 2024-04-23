@@ -1,0 +1,50 @@
+---
+- name: get ipam profile by name
+  ansible.builtin.include_tasks: get_ipam_dns_provider_profile_by_name.yml
+
+- name: set network facts
+  set_fact:
+    usable_networks: "{{ ipam_get_result.internal_profile.usable_networks }}"
+    ipam_dns_profile_uuid: "{{ ipam_get_result.uuid }}"
+
+- name: set network_defined
+  set_fact:
+    net_index_path: None
+    network_paths: []
+    network_id: "avi-mon-{{ namespace_name }}-L7-VIP"
+
+- name: populate network_paths
+  set_fact:
+    network_paths: "{{ network_paths + [net_index] }}"
+  loop_control:
+    loop_var: usable_network
+    index_var: net_index
+  when: "network_id in usable_network.nw_ref"
+  with_items: "{{ usable_networks }}"
+
+- name: reverse list # if you remove path 0 first the index for all of the networks changes.  Remove from the end and it does not
+  set_fact:
+    network_paths: "{{ network_paths | reverse}}"
+
+- name: Show network paths
+  debug:
+    var: network_paths
+
+- name: Remove network from IPAM Profile
+  uri:
+    url: "https://{{ avi_credentials.controller }}/api/ipamdnsproviderprofile/{{ ipam_dns_profile_uuid }}"
+    method: PATCH
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      X-CSRFToken: "{{ login_response.cookies.csrftoken }}"
+      Referer: "https://{{ avi_credentials.controller }}"
+      X-Avi-Version: "{{ avi_credentials.api_version }}"
+      Cookie: "{{ login_response.cookies_string }}"
+    body_format: json
+    body: "{{ lookup('template', 'templates/delete_network_to_ip_profile_request.json.j2')}}"
+  loop_control:
+    loop_var: path_index
+  with_items: "{{ network_paths }}"
+  register: ipam_result
