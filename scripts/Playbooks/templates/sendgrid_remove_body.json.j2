@@ -1,0 +1,29 @@
+{
+    "personalizations": [
+        {
+            "to": [
+                {
+                    "email": "{{ requester_email }}"
+                }
+            ]
+            {% if cc_email_address is defined %}
+                ,
+            "cc" : [
+                {
+                    "email": "{{ cc_email_address }}"
+                }
+            {% endif %}
+            ]
+        }
+    ],
+    "from": {
+        "email": "{{ from_email }}"
+    },
+    "subject": "VCF Tanzu Namespace {{ namespace_name }} Deleted!",
+    "content": [
+        {
+            "type": "text/plain",
+            "value": "VCF Namespace {{ namespace_name }} has been successfully deleted"
+        }
+    ]
+}
