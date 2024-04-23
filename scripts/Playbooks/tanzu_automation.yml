@@ -1,0 +1,35 @@
+- name: Tanzu Automation
+  hosts: 127.0.0.1
+  connection: local
+  gather_facts: false
+  collections:
+    - vmware.alb
+  vars_files:
+    - ../vars/namespace.yml
+    - ../vars/infoblox_connection.yml
+    - ../vars/vcenter_connection.yml
+    - ../vars/nsxt_connection.yml
+    - ../vars/avi_connection.yml
+    - ../vars/sendgrid_connection.yml
+  vars:
+    namespace_mode: create
+
+  tasks:
+  - name: validate request
+    ansible.builtin.include_tasks: tasks/validate_request.yml
+  - name: check out repo
+    ansible.builtin.include_tasks: tasks/checkout_config_repo.yml
+  - name: check if namespace exists
+    ansible.builtin.include_tasks: tasks/get_namespace.yml
+  - name: create networks
+    ansible.builtin.include_tasks: tasks/manage_infoblox.yml
+  - name: create namespace
+    ansible.builtin.include_tasks: tasks/manage_namespace.yml
+  - name: NSXT Create
+    ansible.builtin.include_tasks: tasks/create_nsxt_components.yml
+  - name: AVI Create
+    ansible.builtin.include_tasks: tasks/create_avi_components.yml
+  - name: Send Email
+    ansible.builtin.include_tasks: tasks/send_mail.yml
+  - name: write config
+    ansible.builtin.include_tasks: tasks/manage_namespace_config.yml
