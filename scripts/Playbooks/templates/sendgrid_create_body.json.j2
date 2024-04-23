@@ -1,0 +1,29 @@
+{
+    "personalizations": [
+        {
+            "to": [
+                {
+                    "email": "{{ requester_email }}"
+                }
+            ]
+            {% if cc_email_address is defined %}
+                ,
+            "cc" : [
+                {
+                    "email": "{{ cc_email_address }}"
+                }
+            {% endif %}
+            ]
+        }
+    ],
+    "from": {
+        "email": "{{ from_email }}"
+    },
+    "subject": "VCF Tanzu Namespace {{ namespace_name }} Created",
+    "content": [
+        {
+            "type": "text/plain",
+            "value": "VCF Namespace {{ namespace_name }} has been successfully created\n\nitsm_request: {{ itsm_request }}\nnamespace_environment: {{ namespace_environment }}\nnamespace_name: {{ namespace_name }}\ntkg_cluster_name: {{ tkg_cluster_name }}\nrequester: {{ requester }}\nrequester_email: {{ requester_email }}\nnamespace_permissions: {{ namespace_permissions }}\nbackup_policy: {{ backup_policy }}\negress_network: {{ egress_network.network[0] }}\ningress_network: {{ ingress_network.network[0] }}\nnamespace_network: {{ namespace_network.network[0] }}\navi_network: {{ avi_network.network[0] }}\nnsxt_policy_tier1: avi-mon-{{ namespace_name }}-T1\nnsxt_policy_segment: avi-mon-{{ namespace_name }}-L7-VIP\nnsxt_snat_resource: avi-mon-{{ tkg_cluster_name }}-SNAT\nnsxt_source_policy_group: avi-mon-{{ tkg_cluster_name }}-SNAT\nnsxt_dest_policy_group: tanzu-namespace-{{ tkg_cluster_name }}\nnsxt_policy_security_policy: avi-mon-{{ tkg_cluster_name }}"
+        }
+    ]
+}
