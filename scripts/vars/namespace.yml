@@ -1,0 +1,53 @@
+#vcenter vars
+cluster_name: domain-c10
+supervisor_id: 2c55dff9-567a-4687-a7da-7ec803662a8c
+nsx_tier0_gateway_id: 7878aff9-7d7e-4eba-98fe-affa6da29109
+content_library_id: "4ad157a0-f0bc-4772-84e8-f11ce8c2fba0"
+msk_tanzu_storage_policy_id: "94093dad-a169-446b-925c-ddc20d19aa28"
+msk_storage_request_limit: 5120000
+subnet_prefix_length: 28
+namespace_prefix_length: 27
+
+#infoblox network container variables
+msk_network_view: MSKCC
+infoblox_networks:
+  nonprod:
+    tanzu_ingress_network_container: 10.244.208.0/22
+    tanzu_egress_network_container: 10.244.212.0/22
+    avi_l7_network_container: 10.244.216.0/22
+    tanzu_namespace_network_container: 10.96.224.0/22
+  prod:
+    tanzu_ingress_network_container: 10.244.196.0/22
+    tanzu_egress_network_container: 10.244.200.0/22
+    avi_l7_network_container: 10.244.204.0/22
+    tanzu_namespace_network_container: 10.96.208.0/22
+
+#nsxt vars
+nsxt_edge_cluster_name: "vsmskpvcfedgewldm1"
+nsxt_edge_cluster_path: "vsmskpvcfedgewldm1"
+nsxt_edge_cluster_id: "c7e3abde-4637-407a-aab0-7366477e5332"
+nsxt_tier0_gateway_name: "mt-01-vDLRT0-02-u11"
+nsxt_transport_zone_name: "overlay-tz-vsmskpvcfwnsx.mskcc.org"
+nsxt_replication_mode: "MTEP"
+nat_id: "USER"
+
+#git config repo vars
+tanzu_config_repo: git@github.com:MSK-Staging/VMWareTanzuAnsibleConfig.git
+tanzu_repo_checkout_dir : tz_config
+
+#AVI Vars
+# Cloud Setup
+cloud_name: mon-vcf-nsxt
+IPAM_PROFILE:
+  ipam_dns_profile_name: mon-nsxt-ipam
+  tenant: "admin"
+
+#Mail Detals
+from_email: vcf-tanzu-mtdc@mskcc.org
+#cc_email_address: containerinfrastructure@mskcc.org
+class_size:
+  small: 
+    - "best-effort-2xlarge"
+    - "best-effort-4xlarge"
+    - "best-effort-8xlarge"
+    - "best-effort-standard"
