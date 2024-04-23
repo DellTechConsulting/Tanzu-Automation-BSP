@@ -1,0 +1,39 @@
+- name: Validate itsm_request
+  assert:
+    that:
+      - itsm_request is defined
+    fail_msg: itsm_request is not defined.  It is a required variable.
+- name: Validate namespace_environment
+  assert:
+    that:
+      - namespace_environment is defined
+    fail_msg: namespace_environment is not defined.  It is a required variable.
+- name: Validate namespace
+  assert:
+    that:
+      - namespace is defined
+    fail_msg: namespace is not defined.  It is a required variable.
+- name: Validate requester
+  assert:
+    that:
+      - requester is defined
+    fail_msg: requester is not defined.  It is a required variable.
+- name: Validate requester_email
+  assert:
+    that:
+      - requester_email is defined
+    fail_msg: requester_email is not defined.  It is a required variable.
+- name: Validate namespace_permissions
+  assert:
+    that:
+      - namespace_permissions is defined
+    fail_msg: namespace_permissions is not defined.  It is a required variable.
+  when:
+  - namespace_mode == 'create'
+- name: Validate backup_policy
+  assert:
+    that:
+      - backup_policy is defined
+    fail_msg: backup_policy is not defined.  It is a required variable.
+  when:
+  - namespace_mode == 'create'
