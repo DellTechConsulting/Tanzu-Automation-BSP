@@ -1,0 +1,33 @@
+- name: Write Folder to Repo
+  file:
+    path: "{{ tanzu_repo_checkout_dir }}/tanzu/namespaces/{{ namespace_environment }}"
+    state: directory
+  when:
+    - namespace_mode == 'create'
+
+- name: Write Config to repo file
+  ansible.builtin.template:
+    src: templates/namespace_config.yml.j2
+    dest: "{{ tanzu_repo_checkout_dir }}/tanzu/namespaces/{{ namespace_environment }}/{{ namespace_name }}.yml"
+  when:
+    - namespace_mode == 'create'
+
+- name: Remove Namespace Config file from Repo
+  ansible.builtin.file:
+    path: "{{tanzu_repo_checkout_dir}}/tanzu/namespaces/{{ namespace_environment }}/{{ namespace_name }}.yml"
+    state: absent
+  when:
+    - namespace_mode == 'remove'
+
+- name: Commit to Repo
+  shell: 
+    cmd: "cd {{ tanzu_repo_checkout_dir }};git add .; git commit -m '{{ namespace_mode }} namespace requested by: {{ requester }} request: {{ itsm_request }}'"
+
+- name: Push file to repo
+  shell:
+    cmd: "cd {{ tanzu_repo_checkout_dir }};git pull;git push"
+
+- name: Remove git deploy key from runner
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.ssh/git_key"
+    state: absent
