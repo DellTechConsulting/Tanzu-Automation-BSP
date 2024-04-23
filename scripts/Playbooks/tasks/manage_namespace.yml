@@ -1,0 +1,50 @@
+- name: get auth token
+  ansible.builtin.include_tasks: vcenter_authenticate.yml
+
+- name: Fetch Namespaces
+  uri:
+    url: "https://{{ vcenter_api_host }}/api/vcenter/namespaces/instances/{{ namespace_name }}"
+    validate_certs: "{{ validate_certs }}"
+    method: GET
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      vmware-api-session-id: "{{ auth_token }}"
+    status_code:
+      - 404
+  when:
+  - namespace_mode == 'create'
+
+- name: Create Namespace
+  uri:
+    url: "https://{{ vcenter_api_host }}/api/vcenter/namespaces/instances/v2"
+    validate_certs: "{{ validate_certs }}"
+    method: POST
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      vmware-api-session-id: "{{ auth_token }}"
+    body_format: json
+    body: "{{ lookup('template', 'templates/namespace_request.json.j2')}}"
+    status_code:
+      - 204
+  when:
+  - namespace_mode == 'create'
+  register: namespace_instances
+  changed_when: true
+
+
+- name: Delete Namespace
+  uri:
+    url: "https://{{ vcenter_api_host }}/api/vcenter/namespaces/instances/{{ namespace_name }}"
+    validate_certs: "{{ validate_certs }}"
+    method: DELETE
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      vmware-api-session-id: "{{ auth_token }}"
+    status_code:
+      - 204
+      - 404
+  when:
+  - namespace_mode == 'remove'
