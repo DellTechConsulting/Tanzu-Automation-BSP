@@ -1,0 +1,8 @@
+---
+collections:
+  - infoblox.nios_modules
+  - ansible.utils
+  - name: vmware.alb
+    version: 22.1.4
+  - name: https://github.com/vmware/ansible-for-nsxt
+    type: git
