@@ -1,7 +1,7 @@
 itsm_request: SR_12345
 namespace_environment: nonprod #nonprod or prod
 namespace_name: apmtestjoe #this is the apm number.  
-requester: Joe Bond
-requester_email: joseph.bond@dell.com
+requester: Bhavani S Pradhan
+requester_email: bhavanishankar.pradhan@dell.com
 namespace_permissions: GRP_TDV_VCF_VMW_POC
 backup_policy: daily #daily, weekly, monthly
