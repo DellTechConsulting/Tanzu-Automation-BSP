@@ -1,0 +1,62 @@
+- name: Get Next Available Networks from InfoBlox
+  ansible.builtin.set_fact:
+    ingress_network: 
+      net_type: ingress
+      network: "{{ lookup('infoblox.nios_modules.nios_next_network', infoblox_networks[namespace_environment].tanzu_ingress_network_container , cidr=28, network_view=msk_network_view,
+                      provider={'host': infoblox_host, 'username': infoblox_user, 'password': infoblox_password}) }}"
+    egress_network: 
+      net_type: egress
+      network: "{{ lookup('infoblox.nios_modules.nios_next_network', infoblox_networks[namespace_environment].tanzu_egress_network_container , cidr=28, network_view=msk_network_view,
+                      provider={'host': infoblox_host, 'username': infoblox_user, 'password': infoblox_password}) }}"
+    namespace_network: 
+      net_type: namespace
+      network: "{{ lookup('infoblox.nios_modules.nios_next_network', infoblox_networks[namespace_environment].tanzu_namespace_network_container , cidr=27, network_view=msk_network_view,
+                      provider={'host': infoblox_host, 'username': infoblox_user, 'password': infoblox_password}) }}"
+    avi_network:
+      net_type: avi_l7 
+      network: "{{ lookup('infoblox.nios_modules.nios_next_network', infoblox_networks[namespace_environment].avi_l7_network_container , cidr=28, network_view=msk_network_view,
+                      provider={'host': infoblox_host, 'username': infoblox_user, 'password': infoblox_password}) }}"
+  when:
+    - namespace_mode == 'create'
+
+- name: Allocate Infoblox network
+  infoblox.nios_modules.nios_network:
+    network: "{{ network_info.network[0] }}"
+    network_view: "{{ msk_network_view }}"
+    comment: "Reserved namespace: {{ namespace_name }} requester: {{ requester }} request: {{ itsm_request }} iac=true created with ansible git@github.com:MSK-Staging/VMWareTanzu.git"
+    extattrs:
+      Application: "{{ namespace_name }}"
+    state: present
+    provider:
+      host: "{{ infoblox_host }}"
+      username: "{{ infoblox_user }}"
+      password: "{{ infoblox_password }}"
+  loop_control:
+      loop_var: network_info
+  with_items: 
+    - "{{ ingress_network }}"
+    - "{{ egress_network }}"
+    - "{{ namespace_network }}"
+    - "{{ avi_network }}"
+  when:
+    - namespace_mode == 'create'
+
+
+- name: Release network
+  infoblox.nios_modules.nios_network:
+    network: "{{ network_and_cidr }}"
+    network_view: "{{ msk_network_view }}"
+    state: absent
+    provider:
+      host: "{{ infoblox_host }}"
+      username: "{{ infoblox_user }}"
+      password: "{{ infoblox_password }}"
+  loop_control:
+    loop_var: network_and_cidr
+  with_items: 
+    - "{{ egress_network }}"
+    - "{{ ingress_network }}"
+    - "{{ namespace_network }}"
+    - "{{ avi_network }}"
+  when:
+    - namespace_mode == 'remove'
