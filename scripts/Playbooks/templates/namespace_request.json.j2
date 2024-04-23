@@ -1,0 +1,67 @@
+{
+    "cluster": "{{ cluster_name }}",
+    "supervisor": "{{ supervisor_id }}",
+    "namespace": "{{ namespace_name }}",
+    "self_service_namespace": "false",
+    "description": "created by itsm request {{ itsm_request }}",
+    "storage_specs": [
+        {
+            "policy": "{{ msk_tanzu_storage_policy_id }}"
+        }
+    ],
+    "resource_spec": {
+        "storage_request_limit": {{ msk_storage_request_limit }}
+    },
+    "access_list": [
+        {
+            "role": "OWNER",
+            "subject_type": "GROUP",
+            "subject": "VCAdministrators",
+            "domain": "mskcc.root.mskcc.org"
+        },
+        {
+            "role": "EDIT",
+            "subject_type": "GROUP",
+            "subject": "{{ namespace_permissions }}",
+            "domain": "mskcc.root.mskcc.org"
+        }
+
+    ],
+    "vm_service_spec": {
+       "vm_classes": [
+            "best-effort-2xlarge",
+            "best-effort-4xlarge",
+            "best-effort-standard"
+        ],
+        "content_libraries": [
+            "{{ content_library_id }}"
+        ]
+    },
+    "namespace_network": {
+        "network": {
+            "namespace_network_cidrs": [
+                {
+                    "address": "{{ namespace_network.network[0].split('/')[0] }}",
+                    "prefix": {{ namespace_network.network[0].split('/')[1] }}
+                }
+            ],
+            "ingress_cidrs": [
+                {
+                    "address": "{{ ingress_network.network[0].split('/')[0] }}",
+                    "prefix": {{ ingress_network.network[0].split('/')[1] }}
+                }
+            ],
+            "egress_cidrs": [
+                {
+                    "address": "{{ egress_network.network[0].split('/')[0] }}",
+                    "prefix": {{ egress_network.network[0].split('/')[1] }}
+                }
+            ],
+            "nsx_tier0_gateway" : "{{ nsx_tier0_gateway_id }}",
+            "load_balancer_size": "SMALL",
+            "routed_mode": false,
+            "subnet_prefix_length": {{ subnet_prefix_length }}
+        },
+        "network_provider": "NSXT_CONTAINER_PLUGIN"
+    }
+}
