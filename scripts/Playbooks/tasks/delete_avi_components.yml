@@ -1,0 +1,37 @@
+---
+- name: Login to avi
+  uri:
+    url: "https://{{ avi_credentials.controller }}/login"
+    method: post
+    validate_certs: "{{ validate_certs }}"
+    body_format: form-urlencoded
+    body:
+      username: "{{ avi_credentials.username }}"
+      password: "{{ avi_credentials.password}}"
+  register: login_response 
+
+- name: search and remove network from ipam profile
+  ansible.builtin.include_tasks: delete_network_from_avi_ipamdnsprofile.yml
+
+- name: Delete Network
+  avi_network:
+    name: "avi-mon-{{ namespace_name }}-L7-VIP"
+    avi_credentials: "{{ avi_credentials }}"
+    state: absent
+    cloud_ref: "{{'/api/cloud?name='+ cloud_name }}"
+  register: avi_network_delete_result
+
+- name: Display Deleted Network object
+  debug:
+    msg: "{{ avi_network_delete_result }}"
+
+- name: Delete VRFContext SE MGMT DFGW
+  avi_vrfcontext:
+    avi_credentials: "{{ avi_credentials }}"
+    state: absent
+    cloud_ref: "{{'/api/cloud?name='+ cloud_name }}"
+    name: "avi-mon-{{ namespace_name }}-T1"
+  register: avi_vrfcontext
+- name: Display created VRFContext object
+  debug:
+    msg: "{{ avi_vrfcontext }}"
