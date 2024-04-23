@@ -1,0 +1,29 @@
+---
+- name: send create email
+  uri:
+    url: "https://{{ sendgrid_host }}/v3/mail/send"
+    method: POST
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Authorization: "Bearer {{ sendgrid_api_key }}"
+    body_format: json
+    body: "{{ lookup('template', 'templates/sendgrid_create_body.json.j2')}}"
+    status_code:
+      - 202
+  when: 
+    - namespace_mode == 'create'
+- name: send remove email
+  uri:
+    url: "https://{{ sendgrid_host }}/v3/mail/send"
+    method: POST
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Authorization: "Bearer {{ sendgrid_api_key }}"
+    body_format: json
+    body: "{{ lookup('template', 'templates/sendgrid_remove_body.json.j2')}}"
+    status_code:
+      - 202
+  when: 
+    - namespace_mode == 'remove'
