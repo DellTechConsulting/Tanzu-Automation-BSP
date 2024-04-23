@@ -1,0 +1,30 @@
+- name: create dir
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.ssh"
+    state: directory
+    mode: '700'
+
+- name: write key to file
+  copy:
+    src: "files/git_deploy_key"
+    dest: "{{ lookup('env', 'HOME') }}/.ssh/git_key"
+    mode: 0600
+- name: Write ssh config
+  copy:
+    src: files/git_config
+    dest: "{{ lookup('env', 'HOME') }}/.ssh/config"
+
+- name: checkout repo
+  git:
+    repo: "{{ tanzu_config_repo }}"
+    dest: "{{ tanzu_repo_checkout_dir }}"
+    key_file: "{{ lookup('env', 'HOME') }}/.ssh/git_key"
+    accept_hostkey: true
+  register: checkout_result
+  until: checkout_result is succeeded
+  retries: 10
+  delay: 10
+
+- name: Set Git Config
+  shell:
+    cmd: git config --global user.email "tanzu_automation@mskcc.org" && git config --global user.name "tanzu namespace iac"
