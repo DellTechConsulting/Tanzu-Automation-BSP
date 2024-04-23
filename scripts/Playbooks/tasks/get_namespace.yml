@@ -1,0 +1,13 @@
+- name: get auth token
+  ansible.builtin.include_tasks: vcenter_authenticate.yml
+- name: Fetch Namespaces
+  uri:
+    url: "https://{{ vcenter_api_host }}/api/vcenter/namespaces/instances/{{ namespace_name }}"
+    validate_certs: "{{ validate_certs }}"
+    method: GET
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      vmware-api-session-id: "{{ auth_token }}"
+    status_code:
+      - 404
