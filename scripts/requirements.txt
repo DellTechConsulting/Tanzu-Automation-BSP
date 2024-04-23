@@ -1,0 +1,3 @@
+infoblox-client
+ansible-core
+PyVmOmi
