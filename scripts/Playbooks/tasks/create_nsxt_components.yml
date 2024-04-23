@@ -1,0 +1,144 @@
+- name: set tkg cluster name
+  set_fact:
+    tkg_cluster_name: "tkg-{{ namespace_name }}"
+- name: Create NSX-T Tier-1 Gateway
+  vmware.ansible_for_nsxt.nsxt_policy_tier1:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: false
+    display_name: "avi-mon-{{ namespace_name }}-T1"
+    description: "Tier-1 Gateway for Override Avi-VIP (Layer 7) Network"
+    failover_mode: "PREEMPTIVE"
+    locale_services:
+      - state: present
+        display_name: "avi-mon-{{ namespace_name }}-T1"
+        edge_cluster_info: {
+          edge_cluster_display_name: "{{ nsxt_edge_cluster_name }}",        
+          edge_cluster_id: "{{ nsxt_edge_cluster_id }}"
+        }
+    tier0_display_name: "{{ nsxt_tier0_gateway_name }}"
+    state: present
+    route_advertisement_types:
+      - "TIER1_STATIC_ROUTES"
+      - "TIER1_CONNECTED"
+      - "TIER1_NAT"
+      - "TIER1_LB_VIP"
+      - "TIER1_LB_SNAT"
+      - "TIER1_DNS_FORWARDER_IP"
+      - "TIER1_IPSEC_LOCAL_ENDPOINT"
+    pool_allocation: "ROUTING"
+  register: tier1_gateway
+
+- name: Create NSX-T Segment
+  vmware.ansible_for_nsxt.nsxt_policy_segment:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: false
+    state: present     
+    display_name: "avi-mon-{{ namespace_name }}-L7-VIP"
+    description: "CIDR for Override Avi-VIP (Layer 7) Network"
+    tier1_id: "avi-mon-{{ namespace_name }}-T1"
+    transport_zone_display_name: "{{ nsxt_transport_zone_name }}"
+    replication_mode: "{{ nsxt_replication_mode }}"
+    admin_state: UP
+    subnets:
+      - gateway_address: "{{ avi_network.network[0] | ansible.utils.ipaddr('next_usable') }}/{{ subnet_prefix_length }}"
+  register: tier1_segment
+- name: Debug tier1_segment
+  debug:
+    msg: "{{ tier1_segment }}"
+
+- name: Create SNAT resource using URI module
+  uri:
+    url: "https://{{ nsxt_manager_hostname }}/policy/api/v1/infra/tier-1s/avi-mon-{{ namespace_name }}-T1/nat/{{ nat_id }}/nat-rules/avi-mon-{{ tkg_cluster_name }}-SNAT"
+    method: PUT
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+    user: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    force_basic_auth: true
+    body_format: json
+    validate_certs: false
+    body:
+      sequence_number: 1000
+      action: "SNAT"
+      translated_network: "{{ egress_network.network[0] | ansible.utils.next_nth_usable(2) }}"
+      scope: []
+      enabled: true
+      logging: false
+      firewall_match: "BYPASS"
+      resource_type: "PolicyNatRule"
+      display_name: "avi-mon-{{ tkg_cluster_name }}-SNAT"
+      description: "SNAT rule for traffic from the T1 to the Egress network"
+      parent_path: "/infra/tier-1s/avi-mon-{{ namespace_name }}-T1/nat/USER"
+    status_code:
+      - 200
+  register: tier1_nat_rule
+- debug:
+    msg: "{{ tier1_nat_rule }}"
+
+- name: Create Source Policy Group
+  vmware.ansible_for_nsxt.nsxt_policy_group:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: False
+    id: "avi-mon-{{ tkg_cluster_name }}-SNAT"
+    display_name: "avi-mon-{{ tkg_cluster_name }}-SNAT"
+    state: "present"
+    domain_id: "default"
+    expression:
+    - ip_addresses:
+        - "{{ egress_network.network[0] | ansible.utils.next_nth_usable(2) }}"
+      resource_type: IPAddressExpression
+  register: Source_Group
+- debug:
+    msg: "{{ Source_Group }}"
+
+- name: Create Destination Policy Group
+  vmware.ansible_for_nsxt.nsxt_policy_group:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: False
+    id: "tanzu-namespace-{{ tkg_cluster_name }}"
+    display_name: "tanzu-namespace-{{ tkg_cluster_name }}"
+    state: "present"
+    domain_id: "default"
+    expression:
+    - ip_addresses:
+        - "{{ namespace_network.network[0] }}"
+      resource_type: IPAddressExpression
+  register: Destination_Group
+- debug:
+    msg: "{{ Destination_Group }}"
+
+- name: create Security Policy
+  vmware.ansible_for_nsxt.nsxt_policy_security_policy:
+    hostname: "{{ nsxt_manager_hostname }}"
+    username: "{{ nsxt_manager_username }}"
+    password: "{{ nsxt_manager_password }}"
+    validate_certs: False
+    id: "avi-mon-{{ tkg_cluster_name }}"
+    display_name: "avi-mon-{{ tkg_cluster_name }}"
+    description: "Security Policy for AVI SEs to access the K8 nodes within the cluster"
+    state: "present"
+    stateful: true
+    category: "Infrastructure"
+    domain_id: "default"        
+    locked: false
+    rules:
+      - action: "ALLOW"
+        description: "Rule for AVI SEs to access the K8 nodes within the cluster"
+        display_name: "SEs to K8 nodes"
+        id: "SEs_to_K8_nodes"
+        source_groups: ["/infra/domains/default/groups/avi-mon-{{ tkg_cluster_name }}-SNAT"]
+        destination_groups: ["/infra/domains/default/groups/tanzu-namespace-{{ tkg_cluster_name }}"]
+        services: ["ANY"]
+        logged: false
+  register: Policy_Rule
+- debug:
+    msg: "{{ Policy_Rule }}"
