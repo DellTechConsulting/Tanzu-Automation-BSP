@@ -1,0 +1,18 @@
+---
+#Requires a login session
+- name: get networks from IPAM Profile
+  uri:
+    url: "https://{{ avi_credentials.controller }}/api/ipamdnsproviderprofile?name={{ IPAM_PROFILE.ipam_dns_profile_name }}"
+    method: GET
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      Referer: "https://{{ avi_credentials.controller }}"
+      X-Avi-Version: "{{ avi_credentials.api_version }}"
+      Cookie: "{{ login_response.cookies_string }}"
+    body_format: json
+  register: ipam_query_result
+- name: set network facts
+  set_fact:
+    ipam_get_result: "{{ ipam_query_result.json.results[0] }}"
