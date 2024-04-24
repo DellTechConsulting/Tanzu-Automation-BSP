@@ -1,6 +1,6 @@
 # Avi Controller Credentials
 avi_credentials:
-  controller: "avi-vcf-mon-tanzu-01.mskcc.org"
+  controller: "avi-vcf-mon-tanzu-01.dellcc.org"
   username: akoadmin
   password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
