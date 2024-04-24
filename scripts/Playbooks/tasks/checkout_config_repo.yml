@@ -27,4 +27,4 @@
 
 - name: Set Git Config
   shell:
-    cmd: git config --global user.email "tanzu_automation@mskcc.org" && git config --global user.name "tanzu namespace iac"
+    cmd: git config --global user.email "tanzu_automation@dellcc.org" && git config --global user.name "tanzu namespace iac"
