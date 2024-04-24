@@ -1,6 +1,6 @@
-vcenter_api_host: vsmskpvcfnj2.mskcc.org
-vcenter_domain: MSKCC.ROOT.MSKCC.ORG
-vcenter_user: SVC_vcf_tanzuadmin
+vcenter_api_host: vsdellpvcfnj2.dellcc.org
+vcenter_domain: dellCC.ROOT.dellCC.ORG
+vcenter_user: SVC_vcf_user
 vcenter_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           65653230306637373732656463326532331625433535626533386465646233396233623234643334
