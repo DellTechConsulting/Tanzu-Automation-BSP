@@ -1,5 +1,5 @@
-nsxt_manager_hostname: "vsmskpvcfwnsx.mskcc.org"
-nsxt_manager_username: vcf_ansible_lcl
+nsxt_manager_hostname: "vsdellpvcfwnsx.dellcc.org"
+nsxt_manager_username: vcf_ansible_user
 nsxt_manager_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           16254365613964326663396234663935346333663864376631396363383039373662333231343662
