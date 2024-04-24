@@ -1,27 +1,27 @@
 # Avi Controller Credentials
 avi_credentials:
-  controller: "avi-vcf-mon-tanzu-01.mskcc.org"
+  controller: "avi-vcf-mon-tanzu-01.dellcc.org"
   username: "pradhanb"
   password: "*************"
   api_version: 22.1.3
 validate_certs: false
 # Cloud Setup
 cloud_name: mon-vcf-nsxt
-vrf_context_name: avi-mon-ns-demo-T1
-se_default_gateway: 10.244.204.65
+vrf_context_name: avi-mon-ns-name-T1
+se_default_gateway: 10.xx.xx.65
 
 network_list:
-- network_portgroup: "avi-mon-ns-demo-L7-VIP"
-  network_network: 10.244.204.64
+- network_portgroup: "avi-mon-ns-name-L7-VIP"
+  network_network: 10.xx.xx.64
   network_mask: 28
-  network_start_range: 10.244.204.67
-  network_end_range: 10.244.204.76
+  network_start_range: 10.xx.xx.67
+  network_end_range: 10.xx.xx.76
 
 # IPAM Profile Settings
 # Make sure that the network has already been configured with allocated ip ranges for VIP network usage.
 IPAM_PROFILE:
   name: test-iac-ipam
   tenant: "admin"
-  network1: "avi-mon-ns-demo-L7-VIP" # Network used for VIP address allocation.
-  network2: "avi-mon-ns-petclinic-L7-VIP"
+  network1: "avi-mon-ns-name-L7-VIP" # Network used for VIP address allocation.
+  network2: "avi-mon-ns-name2-L7-VIP"
   # network3: "avi-mon-ns-vcf-mon-shared-services-L7-VIP"
