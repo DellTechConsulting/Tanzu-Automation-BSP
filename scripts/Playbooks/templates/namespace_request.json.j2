@@ -6,24 +6,24 @@
     "description": "created by itsm request {{ itsm_request }}",
     "storage_specs": [
         {
-            "policy": "{{ msk_tanzu_storage_policy_id }}"
+            "policy": "{{ dell_tanzu_storage_policy_id }}"
         }
     ],
     "resource_spec": {
-        "storage_request_limit": {{ msk_storage_request_limit }}
+        "storage_request_limit": {{ dell_storage_request_limit }}
     },
     "access_list": [
         {
             "role": "OWNER",
             "subject_type": "GROUP",
             "subject": "VCAdministrators",
-            "domain": "mskcc.root.mskcc.org"
+            "domain": "dellcc.root.dellcc.org"
         },
         {
             "role": "EDIT",
             "subject_type": "GROUP",
             "subject": "{{ namespace_permissions }}",
-            "domain": "mskcc.root.mskcc.org"
+            "domain": "dellcc.root.dellcc.org"
         }
 
     ],
