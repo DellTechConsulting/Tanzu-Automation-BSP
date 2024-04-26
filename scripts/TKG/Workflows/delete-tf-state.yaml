@@ -1,0 +1,59 @@
+name: 'Delete Terraform Resource State'
+on: workflow_dispatch
+
+jobs:
+  post-cluster-build:
+    name: 'Delete Terraform Resource State'    
+    runs-on: [self-hosted, DevOps-Hub-Main-Account] #need self-hosted for interacting with the cluster on DELL network
+    environment: DEV
+    env:
+    
+        TF_VAR_provisioner_name: "namespace-app0001" # aka vSphere Namespace name - Update this per cluster        
+        TF_VAR_cluster_name: "tkgs-app0001" # Update this per cluster
+        TF_VAR_storage_capacity: "50G"
+        TF_VAR_ntp: "10.xx.xx.xx"
+        TF_VAR_tkgs_version: "v1.23.8+vmware.2-tkg.2-zshippable"
+        TF_VAR_cluster_group: "vcf-non-prod" # vcf-non-prod or vcf-prod - Update this per cluster
+        TF_VAR_storage_class: "tkg-vcf-storage"
+        TF_VAR_environment: "dev" # Update this per cluster
+        TF_VAR_allow_unverified_ssl: "true"
+        TF_VAR_vcenter_host: "vsxyzpqrfnj2.xyz.com"
+        TF_VAR_vcenter_username: "SVC_vcf_tkgadmin"
+        TF_VAR_management_cluster_name: "vcf-xyx-tanzu-cluster"        
+        TF_VAR_vmw_cloud_api_token: ${{ secrets.TMC_API_TOKEN }}
+        TF_VAR_vcenter_password: ${{ secrets.VCENTER_PASSWORD }}
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: 'terraform/cluster-build'
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3
+    
+    # Set up Node on the self-hosted MSK runner
+    # https://github.com/actions/setup-node
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform show
+      run: terraform show
+
+    - name: Terraform state list
+      run: terraform state list
+
+    # - name: Terraform state remove
+    #   run: terraform state rm -ignore-remote-version tanzu-mission-control_tanzu_kubernetes_cluster.vcf-tkgs-tmc-cluster
