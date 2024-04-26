@@ -1,0 +1,147 @@
+name: 'Post Cluster Build VCF'
+on: workflow_dispatch
+
+jobs:
+  post-cluster-build:
+    name: 'Post Cluster Build tkgs'    
+    runs-on: [self-hosted, DevOps-Hub-Main-Account] #need self-hosted for interacting with the cluster on MSK network
+    environment: DEV
+    env:
+
+      PROVISIONER_NAME: "namespace-app0001"
+      CLUSTER_NAME: "tkgs-app0001"      
+      KUBECTL_VERSION: "v1.23.8"
+      AKO_VERSION: "1.8.2"
+      MGMT_CLUSTER_NAME: "vcf-xyx-tanzu-cluster"
+      AVI_CONTROLLER_HOST: "avi-vcf-tanzu-01.xyz.com"
+      TMC_API_TOKEN: "${{ secrets.TMC_API_TOKEN }}"    
+      AVI_AKO_TOKEN: "${{ secrets.AVI_AKO_TOKEN }}"      
+      DATADOG_API_KEY: "${{ secrets.DATADOG_API_KEY }}"
+
+    defaults:
+      run:
+        shell: bash
+    
+    steps:
+    # Sleep step added just to ensure cluster and its properties is properly loaded
+    # - name: Sleep for 10 secs
+    #   run: sleep 10s
+    #   shell: bash
+    
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v3    
+
+    - name: Install kubectl
+      run: |
+        curl -LO https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+        chmod +x kubectl
+        sudo mv ./kubectl /usr/local/bin/kubectl
+        which kubectl
+        kubectl version    
+
+    - name: Install helm
+      run: |
+        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        chmod 700 get_helm.sh
+        ./get_helm.sh
+        which helm
+        helm version
+        cat /etc/os-release
+        cut -d: -f1 /etc/passwd
+        whoami
+
+    - name: Install Tanzu cli
+      shell: bash
+      run: |
+        set -x
+        sudo apt update
+        sudo apt install -y ca-certificates curl gpg
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://packages.vmware.com/tools/keys/VMWARE-PACKAGING-GPG-RSA-KEY.pub | sudo gpg --dearmor -o /etc/apt/keyrings/tanzu-archive-keyring.gpg
+        echo "deb [signed-by=/etc/apt/keyrings/tanzu-archive-keyring.gpg] https://storage.googleapis.com/tanzu-cli-os-packages/apt tanzu-cli-jessie main" | sudo tee /etc/apt/sources.list.d/tanzu.list
+        sudo apt update
+        sudo apt install -y tanzu-cli
+        tanzu config eula accept
+        export TANZU_CLI_CEIP_OPT_IN_PROMPT_ANSWER=yes
+        tanzu init
+        tanzu plugin clean
+        tanzu plugin sync
+        tanzu version        
+        tanzu plugin install --group vmware-tmc/default
+        tanzu plugin list
+        tanzu mission-control context create tmc-context --endpoint memorialsloanketteringcancercenter.tmc.cloud.vmware.com
+        tanzu context list
+        
+    - name: Get kubeconfig
+      run: |
+        set -x        
+        mkdir -p ~/.kube && touch ~/.kube/config
+        tanzu mission-control cluster kubeconfig get ${CLUSTER_NAME} -m ${MGMT_CLUSTER_NAME} -p ${PROVISIONER_NAME} > ~/.kube/config
+        cat ~/.kube/config        
+        kubectl config get-contexts
+        tanzu context get tmc-context
+        kubectl get nodes
+
+    - name: Apply cluster role bindings
+      run: |          
+        kubectl apply -f cluster-role-binding-allow-auth.yaml
+        kubectl get clusterrolebinding | grep -i allow-authenticated
+      working-directory: terraform/cluster-build
+
+    - name: Install Avi Helm Chart
+      shell: bash
+      run: |
+        kubectl get ns
+        kubectl create ns avi-system
+        kubectl get ns
+        helm show chart oci://projects.registry.vmware.com/ako/helm-charts/ako --version ${AKO_VERSION}
+        helm install --generate-name oci://projects.registry.vmware.com/ako/helm-charts/ako --version ${AKO_VERSION} -f ./values.yaml  --set ControllerSettings.controllerHost=${AVI_CONTROLLER_HOST} --set avicredentials.username="akoadmin" --set avicredentials.password=${{ secrets.AVI_AKO_TOKEN }} --set AKOSettings.primaryInstance=true --namespace=avi-system
+        helm list -n avi-system
+      working-directory: terraform/cluster-build
+
+    - name: install datadog
+      env:
+        ENVIRONMENT: DEV
+        SITE: ${{env.CLUSTER_NAME}}
+        APPLICATION: ${{env.CLUSTER_NAME}}
+      run: |
+        set -x
+        helm repo add datadog https://helm.datadoghq.com
+        helm repo update
+        helm -n datadog upgrade -i datadog --create-namespace datadog/datadog --wait \
+          --set datadog.apiKey=${{ secrets.DATADOG_API_KEY }} \
+          --set targetSystem=linux \
+          --set datadog.clusterName="$CLUSTER_NAME" \
+          --set datadog.tags[0].env="$ENVIRONMENT" \
+          --set datadog.tags[1].application="$APPLICATION" \
+          --set datadog.tags[2].site="$SITE" \
+          --set datadog.dogstatsd.tags[0].env="$ENVIRONMENT" \
+          --set datadog.dogstatsd.tags[1].application="$APPLICATION" \
+          --set datadog.dogstatsd.tags[2].site="$SITE" \
+          --set datadog.kubelet.tlsVerify=false \
+          --set datadog.kubeStateMetricsEnabled=false \
+          --set datadog.kubeStateMetricsCore.enabled=true \
+          --set datadog.apm.enabled=true \
+          --set datadog.apm.portEnabled=true \
+          --set agents.image.tagSuffix=jmx \
+          --set clusterChecksRunner.image.tagSuffix=jmx \
+          --set agents.updateStrategy.rollingUpdate.maxUnavailable="20%" \
+          --set agents.tolerations[0].key="node-role.kubernetes.io/master",agents.tolerations[0].effect=NoSchedule
+
+    # Cleanup step for env vars / files
+    - name: cleanup step
+      if: always()
+      run: |
+        unset TMC_API_TOKEN
+        # unset ARGOCD_GITHUB_APP_PRIVATE_KEY
+        # unset LDAP_BIND_PW
+        # rm -rf terraform/tkgs-confluent-lyn-d/post-cluster-build/argo-cd/ldap-cert-base64
+        # rm -rf terraform/tkgs-confluent-lyn-d/post-cluster-build/argo-cd/patch-dex-template.yaml
+        # rm -rf terraform/tkgs-confluent-lyn-d/post-cluster-build/argo-cd/ldap-cert.crt
+        # rm -rf ~/.kube/config
+        # rm -rf privatekey.crt
+        # rm -rf repo-event-confluent-cfk-infra-sealed.yaml
+        # rm -rf repo-event-confluent-cfk-app-sealed.yaml
+        # rm -rf sealed-secrets-cert.crt
+        # rm -rf sealed-secrets-cert.key
