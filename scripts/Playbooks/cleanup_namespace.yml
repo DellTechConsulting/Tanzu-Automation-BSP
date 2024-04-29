@@ -21,10 +21,10 @@
     ansible.builtin.include_tasks: tasks/checkout_config_repo.yml
   - name: read file
     ansible.builtin.include_vars: "{{ tanzu_repo_checkout_dir }}/tanzu/namespaces/{{ namespace_environment }}/{{ namespace_name }}.yml"
-  - name: delete avi components
-    ansible.builtin.include_tasks: tasks/delete_avi_components.yml
   - name: delete nsxt components
     ansible.builtin.include_tasks: tasks/delete_nsxt_components.yml
+  - name: delete avi components
+    ansible.builtin.include_tasks: tasks/delete_avi_components.yml
   - name: delete namespace
     ansible.builtin.include_tasks: tasks/manage_namespace.yml
   - name: remove networks
