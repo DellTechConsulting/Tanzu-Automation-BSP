@@ -24,4 +24,4 @@ IPAM_PROFILE:
   tenant: "admin"
   network1: "avi-mon-ns-name-L7-VIP" # Network used for VIP address allocation.
   network2: "avi-mon-ns-name2-L7-VIP"
-  # network3: "avi-mon-ns-vcf-mon-shared-services-L7-VIP"
+  # network3: "avi-mon-ns-name3-L7-VIP"
