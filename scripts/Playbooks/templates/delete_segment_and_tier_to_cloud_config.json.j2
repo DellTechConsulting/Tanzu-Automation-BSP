@@ -1,0 +1,18 @@
+{
+    "delete": {
+        "nsxt_configuration": {
+            "data_network_config": {
+                "tier1_segment_config": {
+                    "manual": {
+                        "tier1_lrs": [
+                            {
+                                "segment_id": "/infra/segments/avi-mon-{{ namespace_name }}-L7-VIP",
+                                "tier1_lr_id": "/infra/tier-1s/avi-mon-{{ namespace_name }}-T1"
+                            }
+                        ]
+                    }
+                }
+            }
+        }
+  }
+}
