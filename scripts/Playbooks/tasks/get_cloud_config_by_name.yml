@@ -1,0 +1,18 @@
+---
+#Requires a login session
+- name: get cloud config by name
+  uri:
+    url: "https://{{ avi_credentials.controller }}/api/cloud?name={{ cloud_name }}"
+    method: GET
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      Referer: "https://{{ avi_credentials.controller }}"
+      X-Avi-Version: "{{ avi_credentials.api_version }}"
+      Cookie: "{{ login_response.cookies_string }}"
+    body_format: json
+  register: cloud_query_result
+- name: set cloud facts
+  set_fact:
+    cloud_get_result: "{{ cloud_query_result.json.results[0] }}"
