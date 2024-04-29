@@ -1,3 +1,45 @@
+- name: Login to avi
+  uri:
+    url: "https://{{ avi_credentials.controller }}/login"
+    method: post
+    validate_certs: "{{ validate_certs }}"
+    body_format: form-urlencoded
+    body:
+      username: "{{ avi_credentials.username }}"
+      password: "{{ avi_credentials.password}}"
+  register: login_response 
+- name: get cloud config by name
+  ansible.builtin.include_tasks: get_cloud_config_by_name.yml
+
+- name: set network facts
+  set_fact:
+    cloud_config_uuid: "{{ cloud_get_result.uuid }}"
+
+- name: Add Segment and Tier to Cloud Config
+  uri:
+    url: "https://{{ avi_credentials.controller }}/api/cloud/{{ cloud_config_uuid }}"
+    method: PATCH
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      X-CSRFToken: "{{ login_response.cookies.csrftoken }}"
+      Referer: "https://{{ avi_credentials.controller }}"
+      X-Avi-Version: "{{ avi_credentials.api_version }}"
+      Cookie: "{{ login_response.cookies_string }}"
+    body_format: json
+    body: "{{ lookup('template', 'templates/add_segment_and_tier_to_cloud_config.json.j2')}}"
+  register: cloud_result
+
+- name: Display modified cloud result
+  debug:
+    msg: "{{ cloud_result }}"
+
+#the previous step syncs nsxt components with avi.  If it runs too quickly it will create duplicate avi networks therefore we have a 20 second pause.
+- name: Wait 20 seconds for cloud to be configured. 
+  ansible.builtin.pause:
+    seconds: 20
+
 - name: Configure VRFContext SE MGMT DFGW
   avi_vrfcontext:
     avi_credentials: "{{ avi_credentials }}"
@@ -48,17 +90,6 @@
 - name: Display created Network object
   debug:
     msg: "{{ avi_network_create_result }}"
-
-- name: Login to avi
-  uri:
-    url: "https://{{ avi_credentials.controller }}/login"
-    method: post
-    validate_certs: "{{ validate_certs }}"
-    body_format: form-urlencoded
-    body:
-      username: "{{ avi_credentials.username }}"
-      password: "{{ avi_credentials.password}}"
-  register: login_response 
 
 - name: get ipam profile by name
   ansible.builtin.include_tasks: get_ipam_dns_provider_profile_by_name.yml
