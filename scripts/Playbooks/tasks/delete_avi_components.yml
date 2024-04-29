@@ -21,6 +21,38 @@
     cloud_ref: "{{'/api/cloud?name='+ cloud_name }}"
   register: avi_network_delete_result
 
+- name: get cloud config by name
+  ansible.builtin.include_tasks: get_cloud_config_by_name.yml
+
+- name: set network facts
+  set_fact:
+    cloud_config_uuid: "{{ cloud_get_result.uuid }}"
+
+- name: Delete Segment and Tier to Cloud Config
+  uri:
+    url: "https://{{ avi_credentials.controller }}/api/cloud/{{ cloud_config_uuid }}"
+    method: PATCH
+    validate_certs: "{{ validate_certs }}"
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json" 
+      X-CSRFToken: "{{ login_response.cookies.csrftoken }}"
+      Referer: "https://{{ avi_credentials.controller }}"
+      X-Avi-Version: "{{ avi_credentials.api_version }}"
+      Cookie: "{{ login_response.cookies_string }}"
+    body_format: json
+    body: "{{ lookup('template', 'templates/delete_segment_and_tier_to_cloud_config.json.j2')}}"
+  register: cloud_result
+
+- name: Display modified cloud result
+  debug:
+    msg: "{{ cloud_result }}"
+
+#the previous step syncs nsxt components with avi.  If it runs too quickly it will create duplicate avi networks therefore we have a 20 second pause.
+- name: Wait 20 seconds for cloud to be configured. 
+  ansible.builtin.pause:
+    seconds: 20
+
 - name: Display Deleted Network object
   debug:
     msg: "{{ avi_network_delete_result }}"
