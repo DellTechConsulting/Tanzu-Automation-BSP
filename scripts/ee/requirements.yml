@@ -1,0 +1,8 @@
+---
+collections:
+  - name: dellemc.openmanage
+  - name: servicenow.servicenow
+  - name: infoblox.nios_modules
+  - name: ansible.utils
+  - name: https://github.com/vmware/ansible-for-nsxt
+    type: git
