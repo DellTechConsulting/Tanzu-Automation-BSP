@@ -86,7 +86,7 @@ Password Encryption: -
 
 ansible-vault encrypt_string --vault-password-file ~/.tanzu_vault_key 'pradhan@dellcc.root.dellcc.org' --name 'vcenter_user'
 
-ansible-vault encrypt_string --vault-password-file ~/.tanzu_vault_key 'A****D***@**1' --name 'vcenter_password'
+ansible-vault encrypt_string --vault-password-file ~/.tanzu_vault_key 'A******D****@****1' --name 'vcenter_password'
 
 ##########################################################################
 
