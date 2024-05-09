@@ -1,0 +1,143 @@
+##########################################################################
+
+kubectl-vsphere login --server 10.xx.xx.xx --vsphere-username=pradhan@dellcc.org --tanzu-kubernetes-cluster-namespace=ns-demo --tanzu-kubernetes-cluster-name=tkgs-demo --insecure-skip-tls-verify
+
+kubectl-vsphere login --server 10.xx.xx.xx --vsphere-username=pradhan@dellcc.org --tanzu-kubernetes-cluster-namespace=ns-petclinic --tanzu-kubernetes-cluster-name=tkgs-petclinic-01 --insecure-skip-tls-verify
+
+kubectl-vsphere login --server 10.xx.xx.xx --vsphere-username=pradhan@dellcc.org --tanzu-kubernetes-cluster-namespace=ns-ike-test01 --tanzu-kubernetes-cluster-name=tkgs-vcf-ike1 --insecure-skip-tls-verify
+
+kubectl vsphere login --insecure-skip-tls-verify --vsphere-username amadorenrique --server tanzu-vcf-mon-sp01.dellcc.org --tanzu-kubernetes-cluster-name tkgs-demo01  --tanzu-kubernetes-cluster-namespace ns-demo
+
+##########################################################################
+
+TMC VMware Official APIs:
+  -> Link-1: https://developer.vmware.com/apis/1263/tanzu-mission-control/
+  -> Link-2: https://docs.vmware.com/en/VMware-Cloud-services/services/Using-VMware-Cloud-Services/GUID-E2A3B1C1-E9AD-4B00-A6B6-88D31FCDDF7C.html
+
+Accessing the TMC API: https://kb.vmware.com/s/article/93257
+
+VMware vSphere REST API Guide: https://developer.vmware.com/docs/16116/GUID-48BA4494-F995-42FC-BA43-5DBE5993D9B3.html
+
+
+##########################################################################
+To manually test kubeconfig: - https://docs.vmware.com/en/VMware-vSphere/7.0/vmware-vsphere-with-tanzu/GUID-C099E736-43A6-464C-9BFA-29B8509F0DA1.html#:~:text=Connect%20to%20the%20Tanzu%20Kubernetes%20cluster%20as%20the%20Kubernetes%20administrator,cluster%2Dkubeconfig%2Dadmin%20file.&text=Set%20your%20KUBECONFIG%20environment%20variable,such%20as%20kubectl%20get%20nodes%20.
+
+Connect to the Supervisor Cluster:
+  CMD: kubectl-vsphere login --server 10.xx.xx.xx --vsphere-username=pradhan@dellcc.org --tanzu-kubernetes-cluster-namespace=ns-demo --tanzu-kubernetes-cluster-name=tkgs-demo --insecure-skip-tls-verify
+Switch context to the vSphere Namespace where the target Tanzu Kubernetes cluster is provisioned.:
+  CMD: kubectl config get-contexts
+  CMD: kubectl config use ns-demo
+View the secret objects in the namespace.:
+  CMD: kubectl get secrets
+  Note: The secret is named as TKGS-CLUSTER-NAME-kubeconfig.
+Create a Directory called test:
+  CMD: mkdir test
+  CMD: cd test/
+Decode the secret by running the following command:
+  CMD: kubectl get secret tkgs-demo-kubeconfig -o jsonpath='{.data.value}' | base64 -d > tkgs-demo-config
+  Note: This command decodes the secret and writes it to a local file named tkgs-cluster-kubeconfig-admin. Use the cat command to verify the file contents.
+   56  ls
+   57  cat tkgs-demo-config
+   58  kubectl get nodes
+   59  kubectl --kubeconfig tkgs-demo-config get nodes
+
+##########################################################################
+
+curl https://dell-lab-env.tmc.cloud.vmware.com/v1alpha1/managementclusters/tkgs-nsx/provisioners/tkgs-nsx/tanzukubernetesclusters/tkc-nsx -H "Authorization: Bearer $access_token"
+
+curl https://dell.tmc.cloud.vmware.com/v1alpha1/managementclusters//provisioners/tkgs-nsx/tanzukubernetesclusters/tkc-nsx -H "Authorization: Bearer $access_token"
+
+
+Kubeconfig Manual commands: -
+echo $(curl -d "refresh_token=cqk2WWIXI-Y5GmIxhABCRITn9U1t7ucukyg-7kvdukGk3JQgkD6YFCmkopkVe0sGd_" https://console.cloud.vmware.com/csp/gateway/am/api/auth/api-tokens/authorize | jq -r '.access_token')
+
+curl "https://dell.tmc.cloud.vmware.com/v1alpha1/clusters/tkgs-demo/kubeconfig?fullName.managementClusterName=vcf-monmouth-tanzu-cluster-b&fullName.provisionerName=ns-demo" -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InNpZ25pbmdfMiJ9.eyJzdWIiOiJ2bXdhcmVpZDpiZDQ1ZDhhZS04ZmY2LTRkNmItOWM3MC01MDFhZWRhNDM2MjMiLCJpc3MiOiJodHRwczovL2dhei5jc3AtdmlkbS1wcm9kLmNvbSIsImNvbnRleHRfbmFtZSI6IjhhNmY0ZDVmLWNiOWQtNDM2OS1hZDAwLTVjYzMxYzJjNmU2YSIsImF6cCI6ImNzcF9wcmRfZ2F6X2ludGVybmFsX2NsaWVudF9pZCIsImF1dGhvcml6YXRpb25fZGV0YWlscyI6W10sImRvbWFpbiI6InZtd2FyZWlkIiwiY29udGV4dCI6IjY4N2I3ZWYxLTFhZmQtNDMyMC1hNTI4LTcwNDlmNDFjMTVlMiIsInBlcm1zIjpbImV4dGVybmFsLzA3OWI2OTgyLWUzNDYtNGYxZi1hOTE3LWQ4OGQyM2Q0ODUwMy9zZXJ2aWNlOm1lbWJlciIsImNzcDpvcmdfbWVtYmVyIiwiZXh0ZXJuYWwvMDc5YjY5ODItZTM0Ni00ZjFmLWE5MTctZDg4ZDIzZDQ4NTAzL3NlcnZpY2U6YWRtaW4iXSwiZXhwIjoxNzA5MjM2MjM2LCJpYXQiOjE3MDkyMzQ0MzYsImp0aSI6IjY0MmZjNmMzLWFlN2EtNDkwNy1iNWE1LWU3NjM5ZjkzYzYxMCIsImFjY3QiOiJCaGF2YW5pU2hhbmthci5QcmFkaGFuQGRlbGx0ZWFtLmNvbSIsInVzZXJuYW1lIjoiQmhhdmFuaVNoYW5rYXIuUHJhZGhhbkBkZWxsdGVhbS5jb20ifQ.sWYOoCVopPg-SteYPQa3oERCi0dEc6wtm5zU-K1MlvcVNRhCnxSuIP8lialFnC7j8488NU1tk31bQo7TIGYF1iQIAmpZMxTwcUrL6xcOXjZp3aPQx8JFGlCSZjZA-fiBTTmjx2RCFFR9zmMJIGvsif2b8lR1fryoLo9OVYVyiiJ5wfo1x12OAN0fr83No_2TjpIc_ef-LpC7apMHnFGCWTfF0MZXXmG-Sm4TVpg2WvgqK5z-uKERIU1-0sVxKBwoHakvX3bKo3gRWPPRp95tu8bqy7dPqFGBF5gf58HKBtteuKESHCei_Vc3oeCYFMsBdsTcOlfG2k0KIWK-TYDyQg" | jq -r '.kubeconfig' | base64 --decode > ~/.kube/config
+
+
+As is: -
+curl "https://dell.tmc.cloud.vmware.com/v1alpha1/clusters/tkgs-demo/kubeconfig\?fullName.managementClusterName\vcf-monmouth-tanzu-cluster-b\&fullName.provisionerName\ns-demo" -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6InNpZ25pbmdfMiJ9.eyJzdWIiOiJ2bXdhcmVpZDpiZDQ1ZDhhZS04ZmY2LTRkNmItOWM3MC01MDFhZWRhNDM2MjMiLCJpc3MiOiJodHRwczovL2dhei5jc3AtdmlkbS1wcm9kLmNvbSIsImNvbnRleHRfbmFtZSI6IjhhNmY0ZDVmLWNiOWQtNDM2OS1hZDAwLTVjYzMxYzJjNmU2YSIsImF6cCI6ImNzcF9wcmRfZ2F6X2ludGVybmFsX2NsaWVudF9pZCIsImF1dGhvcml6YXRpb25fZGV0YWlscyI6W10sImRvbWFpbiI6InZtd2FyZWlkIiwiY29udGV4dCI6IjY4N2I3ZWYxLTFhZmQtNDMyMC1hNTI4LTcwNDlmNDFjMTVlMiIsInBlcm1zIjpbImV4dGVybmFsLzA3OWI2OTgyLWUzNDYtNGYxZi1hOTE3LWQ4OGQyM2Q0ODUwMy9zZXJ2aWNlOm1lbWJlciIsImNzcDpvcmdfbWVtYmVyIiwiZXh0ZXJuYWwvMDc5YjY5ODItZTM0Ni00ZjFmLWE5MTctZDg4ZDIzZDQ4NTAzL3NlcnZpY2U6YWRtaW4iXSwiZXhwIjoxNzA5MDI0MDY5LCJpYXQiOjE3MDkwMjIyNjksImp0aSI6ImE5ZDdhMjJiLWM4YjItNDZmNy1hZThjLTY3MmJjZmE4ZWVhNCIsImFjY3QiOiJCaGF2YW5pU2hhbmthci5QcmFkaGFuQGRlbGx0ZWFtLmNvbSIsInVzZXJuYW1lIjoiQmhhdmFuaVNoYW5rYXIuUHJhZGhhbkBkZWxsdGVhbS5jb20ifQ.tM0nqFEeBcPRt24L7zHtfkRK2W6bBUyzlNUd1QgaDQPPi1yYHzNTwHqL_wyiVjg11zDhU6F6lUX5AoS2JKMVdHEMIXkxsP0McvKa4CByqgRnxKXq9IERNjRxU3zJVjmxPXehSw8IcxNk9spQdEMI9HWYSOtd57QnZ16VAomAeU-t0CME1ClhtCY9EbPKaC-hQsEqZrkkHssuB_O5KAPPz9CvQWtSvyAlI30JnPUKnn1XwkeTo6sf8qplG1ozXIOy2pzHdxw1uQaVphPXkfnTF7QQ5ThttdzJqtKaarqUOONhPYvQHCIEWSxlA7AFeT-mMtYqo_QFM-2b2wrnUXiVcw" | jq -r '.kubeconfig' | base64 --decode > ~/.kube/config
+
+kubectl get clusterrolebinding | grep allow
+
+##########################################################################
+To switch to Virtual Environment:
+source ~/tanzu_automation_venv/bin/activate
+##########################################################################
+
+ansible-galaxy collection install -r requirements.yml
+
+##########################################################################
+Create Components: -
+RUN:
+ansible-playbook playbooks/tanzu_automation.yml --e "@vars/test/test_create_namespace.yml"  --e "@vars/namespace.yml" --e "@vars/infoblox_connection.yml" --e "@vars/vcenter_connection.yml" --e "@vars/nsxt_connection.yml" --vault-password-file ~/.tanzu_vault_key
+
+Delete Components: -
+ansible-playbook playbooks/cleanup_namespace.yml --e "@vars/test/test_delete_namespace.yml"  --e "@vars/infoblox_connection.yml" --e "@vars/vcenter_connection.yml" --e "@vars/nsxt_connection.yml" --vault-password-file ~/.tanzu_vault_key
+
+RUN-1:
+ansible-playbook playbooks/cleanup_namespace.yml --e "@playbooks/ns-test1_config.yml"  --e "@vars/infoblox_connection.yml" --e "@vars/vcenter_connection.yml" --e "@vars/nsxt_connection.yml" --vault-password-file ~/.tanzu_vault_key
+
+RUN-2:
+ansible-playbook playbooks/cleanup_namespace.yml --e "@playbooks/ns-test2_config.yml"  --e "@vars/infoblox_connection.yml" --e "@vars/vcenter_connection.yml" --e "@vars/nsxt_connection.yml" --vault-password-file ~/.tanzu_vault_key
+
+
+##########################################################################
+Password Encryption: -
+
+ansible-vault encrypt_string --vault-password-file ~/.tanzu_vault_key 'pradhan@dellcc.root.dellcc.org' --name 'vcenter_user'
+
+ansible-vault encrypt_string --vault-password-file ~/.tanzu_vault_key 'A****D***@**1' --name 'vcenter_password'
+
+##########################################################################
+
+Github Personal Token: ghp_va09Zcdh3lwuHeRYQdFnc712344325W035qyC
+
+TMC Token (22nd Feb - For 6 month): cqk2WWIXI-Y5GmIxhABCRITn9U1t7ucukyg-7kvdukGk3JQgkD6YFCmkopkVe0sGd_
+
+##########################################################################
+
+IMP Links:-
+
+nsxt_policy_segment – Create or Delete a Policy Segment — ansible-for-nsxt-docs 0.0.1 documentation:
+https://ansible-for-nsxt-docs.readthedocs.io/en/latest/nsxt/nsxt_policy_segment_module.html?highlight=segment
+
+NSX-T Data Center REST API - VMware API Explorer
+https://developer.vmware.com/apis/1707/#api
+
+vmware/ansible-for-nsxt: Ansible delivers simple IT automation that ends repetitive tasks and frees up DevOps teams for more strategic work. This project is to enable this automation for NSX-T installation.
+https://github.com/vmware/ansible-for-nsxt
+
+Automating (NSX-T) REST API using Ansible URI module - The Virtualist
+https://thevirtualist.org/automating-nsx-t-rest-api-using-ansible-uri-module/
+
+Tier 1s | NSX VMC Policy APIs
+https://developer.vmware.com/apis/nsx-vmc-policy/latest/tier-1s/
+
+Avi Ansible Collection
+https://github.com/vmware/ansible-collection-alb?tab=readme-ov-file
+
+Avi - Ansible Galaxy - vmware.alb
+https://galaxy.ansible.com/ui/repo/published/vmware/alb/docs/?version=22.1.4
+
+Configuring Ansible for Avi Vantage
+https://avinetworks.com/docs/latest/configuring-ansible-for-avi-vantage/
+
+Install the Datadog Agent on Kubernetes
+https://docs.datadoghq.com/containers/kubernetes/installation/?tab=operator
+
+Avi Network Old - devops/automation_examples/ansible/vmware/network/network_setup.yml at master · avinetworks/devops
+https://github.com/avinetworks/devops/blob/master/automation_examples/ansible/vmware/network/network_setup.yml
+
+Avi Network - devops/automation_examples/ansible/customer-acceleration/vmware/setup_network_alloc/setup_vmware_network_alloc.yml at master · avinetworks/devops
+https://github.com/avinetworks/devops/blob/master/automation_examples/ansible/customer-acceleration/vmware/setup_network_alloc/setup_vmware_network_alloc.yml
+
+Avi VRFContext - devops/automation_examples/ansible/archive/vmware/cloud/vmware_cloud.yml at master · avinetworks/devops
+https://github.com/avinetworks/devops/blob/master/automation_examples/ansible/archive/vmware/cloud/vmware_cloud.yml
+
+Avi IPAM - devops/automation_examples/ansible/customer-acceleration/vmware/setup_ipam/setup_vmware_ipam.yml at master · avinetworks/devops
+https://github.com/avinetworks/devops/blob/master/automation_examples/ansible/customer-acceleration/vmware/setup_ipam/setup_vmware_ipam.yml
+
+Avi IPAM - devops/automation_examples/ansible/customer-acceleration/vmware/setup_ipam/setup_vmware_ipam.yml at master · avinetworks/devops
+https://github.com/avinetworks/devops/blob/master/usecase_kits/vcenter_cloud/Ansible/cloud_deployment/vCenter_Cloud_deployment.yaml
+
+##########################################################################
